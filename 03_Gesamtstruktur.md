@@ -175,21 +175,3 @@ Im **Active Directory Users and Computers** (auf DC1):
 - Mit einem Benutzer, der in **keiner** der beiden Gruppen ist, testen → RDP-Verbindung sollte mit einer Berechtigungsfehlermeldung abgelehnt werden.
 
 
-
----
-
-## 7. Checkliste
-
-- [ ] AD DS-Rolle auf DC1 installiert
-- [ ] DC1 als erster DC einer neuen Gesamtstruktur promotet (Standardpfade belassen)
-- [ ] DNS-Forwarder auf 9.9.9.9 eingerichtet (inkl. Begründung dokumentiert)
-- [ ] Forward-Zone vorhanden (automatisch)
-- [ ] Reverse-Zone für jedes verwendete Subnetz erstellt
-- [ ] PTR-Record für DC aktualisiert/vorhanden
-- [ ] nslookup vorwärts und rückwärts erfolgreich getestet
-- [ ] AD-Papierkorb aktiviert
-- [ ] Benötigte Ports zwischen Client und DC in Security Group offen
-- [ ] Client erfolgreich der Domäne beigetreten
-- [ ] PTR-Record für Client aktualisiert/vorhanden
-- [ ] Zwei RDP-Gruppen erstellt (`RDP-Admins`, `RDP-Users`)
-- [ ] RDP-Zugriff manuell auf einem Client zugewiesen und getestet
