@@ -1,66 +1,71 @@
 # LB2 – Freigaben, Laufwerke & Berechtigungen: Umsetzungsanleitung
 
-Diese Doku führt durch das Anlegen von Usern/Gruppen, die UNC-Grundlagen, das Erstellen von Ordnern/Freigaben mit ABE, die Vergabe von Freigabe- und NTFS-Berechtigungen, das Testen sowie ein eigenes Group-Nesting-Konzept nach AGDLP.
+Diese Doku beschreibt das Anlegen von Usern und Gruppen, die UNC-Grundlagen, das Erstellen von Ordnern und Freigaben mit ABE, die Vergabe von Freigabe- und NTFS-Berechtigungen, das Testen sowie ein eigenes Group-Nesting-Konzept nach AGDLP.
 
-> **Hinweis:** Konkrete Namen (Domäne, Ordnerstruktur, genaue Berechtigungsmatrix) richten sich nach deiner eigenen Planung (Setup-Sheet, Kap. 8 „Abteilungen & Benutzer" sowie die Berechtigungstabelle aus dem Auftrag). Ersetze die Platzhalter unten durch deine tatsächlichen Werte.
+**Umgebung**
+
+| Was | Wert |
+|---|---|
+| Domäne (DNS) | `dc001.tbz.m159` |
+| NetBIOS-Name | `<NETBIOS>` (auslesen mit `(Get-ADDomain).NetBIOSName`) |
+| Domain Controller / Fileserver | `DC01` (`10.0.0.115`) |
+| Client | Windows Server (Desktop), Mitglied der Domäne |
+| Ordnerstruktur | `C:\Freigaben\Daten` (bzw. `D:\Freigaben\Daten`, falls ein Laufwerk D: existiert) |
+| Freigabe | `\\DC01\Daten` |
+
+Die Umsetzung erfolgte mit einem PowerShell-Skript auf DC01. Die GUI-Schritte sind zusätzlich beschrieben, damit jeder Schritt nachvollziehbar und manuell prüfbar ist.
 
 ---
 
 ## 1. User und Gruppen anlegen
 
-### 1.1 Benutzer erstellen
+### 1.1 Organisationseinheiten
 
-Auf DC1 im **Active Directory Users and Computers** (ADUC) bzw. im **Active Directory Administrative Center**:
+Im **Active Directory Users and Computers** (ADUC) zwei OUs direkt unter der Domäne:
 
-1. Für jede Abteilung mindestens einen Benutzer anlegen, wie in der Planung definiert (Setup-Sheet Kap. 8):
+- `Benutzer` für alle Benutzerkonten
+- `Gruppen` für alle Sicherheitsgruppen
 
-   | Abteilung   | Bereich | Beispiel-Benutzername |
-   |-------------|---------|------------------------|
-   | Sekretariat | intern  | `s.muster` |
-   | Buchhaltung | intern  | `b.muster` |
-   | GL          | intern  | `g.muster` |
-   | Promoter    | extern  | `p.muster` |
+### 1.2 Benutzer erstellen
 
-2. Passwort vergeben (Komplexitätsanforderungen der Default Domain Policy beachten).
-   - Falls das Passwort als zu schwach abgelehnt wird: zuerst Auftrag **„9.1 Default Domain Policy – Passwortrichtlinien ändern"** vorziehen.
-3. **User must change password at next logon** je nach Vorgabe setzen oder deaktivieren.
+Pro Abteilung zwei Benutzer (Benutzername = erster Buchstabe des Vornamens, Punkt, Nachname):
 
-Alternativ per PowerShell:
+| Abteilung   | Bereich | Benutzer 1 | Benutzer 2 |
+|-------------|---------|------------|------------|
+| Sekretariat | intern  | `a.keller` (Anna Keller) | `m.huber` (Marco Huber) |
+| Buchhaltung | intern  | `s.frei` (Sandra Frei) | `t.baumann` (Thomas Baumann) |
+| GL          | intern  | `p.steiner` (Peter Steiner) | `l.meier` (Laura Meier) |
+| Promoter    | extern  | `n.brunner` (Nico Brunner) | `j.roth` (Julia Roth) |
+
+- Testpasswort: `Passw0rd!159` (erfüllt die Komplexitätsanforderungen der Default Domain Policy: Gross-/Kleinbuchstaben, Zahl, Sonderzeichen, mind. 7 Zeichen).
+- Passwort läuft nicht ab (`PasswordNeverExpires`), damit die Tests jederzeit möglich sind.
+- Falls ein Passwort als zu schwach abgelehnt wird: zuerst Auftrag «9.1 Default Domain Policy – Passwortrichtlinien verändern» vorziehen.
+
+Beispiel per PowerShell:
 ```powershell
-New-ADUser -Name "Vorname Nachname" -SamAccountName "s.muster" `
-    -UserPrincipalName "s.muster@m159.tbz" `
-    -Path "OU=Benutzer,DC=m159,DC=tbz" `
-    -AccountPassword (Read-Host -AsSecureString "Passwort") `
-    -Enabled $true
+New-ADUser -Name "Anna Keller" -GivenName Anna -Surname Keller -SamAccountName a.keller `
+    -UserPrincipalName "a.keller@dc001.tbz.m159" -Path "OU=Benutzer,DC=dc001,DC=tbz,DC=m159" `
+    -AccountPassword (ConvertTo-SecureString "Passw0rd!159" -AsPlainText -Force) `
+    -Enabled $true -PasswordNeverExpires $true -Department Sekretariat
 ```
 
-### 1.2 Globale Sicherheitsgruppen pro Abteilung
+### 1.3 Globale Sicherheitsgruppen pro Abteilung
 
-Für **jede Abteilung** eine globale Sicherheitsgruppe anlegen (Bereich: **Global**, Typ: **Security**):
+Für jede Abteilung eine Gruppe (Bereich **Global**, Typ **Security**) in der OU `Gruppen`. Die Benutzer der Abteilung werden Mitglied.
 
-| Gruppenname       | Enthält Benutzer aus |
-|-------------------|-----------------------|
-| `G_Sekretariat`   | Abteilung Sekretariat |
-| `G_Buchhaltung`   | Abteilung Buchhaltung |
-| `G_GL`            | Abteilung GL |
-| `G_Promoter`      | Abteilung Promoter |
+| Gruppe | Mitglieder |
+|---|---|
+| `G_Sekretariat` | `a.keller`, `m.huber` |
+| `G_Buchhaltung` | `s.frei`, `t.baumann` |
+| `G_GL` | `p.steiner`, `l.meier` |
+| `G_Promoter` | `n.brunner`, `j.roth` |
 
-```powershell
-New-ADGroup -Name "G_Sekretariat" -GroupScope Global -GroupCategory Security -Path "OU=Gruppen,DC=m159,DC=tbz"
-Add-ADGroupMember -Identity "G_Sekretariat" -Members "s.muster"
-```
+### 1.4 Gruppen «Intern» und «Extern»
 
-### 1.3 Gruppen „intern" und „extern"
+Zwei weitere globale Sicherheitsgruppen `Intern` und `Extern`. Als Mitglieder kommen **die Abteilungsgruppen** (nicht die einzelnen Benutzer) hinein:
 
-Zusätzlich **zwei** weitere globale Sicherheitsgruppen anlegen:
-
-- `Intern`
-- `Extern`
-
-Anschliessend die **Abteilungsgruppen** (nicht die einzelnen User!) als Mitglieder in diese beiden Gruppen einfügen – je nachdem, ob die Abteilung laut Planung intern oder extern ist:
-
-| Gruppe   | Enthält (Mitglied) |
-|----------|---------------------|
+| Gruppe | Mitglieder (Gruppen) |
+|---|---|
 | `Intern` | `G_Sekretariat`, `G_Buchhaltung`, `G_GL` |
 | `Extern` | `G_Promoter` |
 
@@ -69,132 +74,135 @@ Add-ADGroupMember -Identity "Intern" -Members "G_Sekretariat","G_Buchhaltung","G
 Add-ADGroupMember -Identity "Extern" -Members "G_Promoter"
 ```
 
-> Das ist bereits eine Vorstufe von **Group Nesting** (Gruppe-in-Gruppe): Abteilungsgruppen werden in übergeordnete Gruppen verschachtelt, statt einzelne User überall neu zuzuweisen.
+Das ist bereits eine Vorstufe von Group Nesting: Abteilungsgruppen werden in übergeordnete Gruppen verschachtelt, statt einzelne User überall neu zuzuweisen.
 
-### 1.4 Testanmeldung
+### 1.5 Testanmeldung
 
-Mit mindestens einem Benutzer pro Abteilung am Windows-Client anmelden, um zu prüfen, dass:
-- die Anmeldung grundsätzlich funktioniert,
-- der Benutzer in den erwarteten Gruppen Mitglied ist (`whoami /groups` auf dem Client).
+Alle Testbenutzer sind zusätzlich Mitglied der Gruppe `RDP-Users` (Konzept aus dem Auftrag «Gesamtstruktur & Client»). Dadurch dürfen sie sich per Remote Desktop am Client anmelden.
+
+Kontrolle nach der Anmeldung auf dem Client:
+```
+whoami /groups
+```
+Die erwarteten Gruppen (z. B. `G_Buchhaltung`, `Intern`) müssen aufgelistet sein. Gruppenänderungen wirken erst nach einer neuen Anmeldung.
 
 ---
 
 ## 2. UNC-Grundlagen
 
-Ein **UNC-Pfad** (Uniform Naming Convention) adressiert eine Netzwerkressource unabhängig von gemappten Laufwerksbuchstaben, nach dem Schema:
+Ein **UNC-Pfad** (Uniform Naming Convention) adressiert eine Netzwerkressource unabhängig von Laufwerksbuchstaben:
 
 ```
 \\Servername\Freigabename\Unterordner
 ```
 
-Beispiel: `\\dc1\Daten\Buchhaltung`
+Beispiel in dieser Umgebung: `\\DC01\Daten\Buchhaltung`
 
-- Funktioniert unabhängig davon, ob ein Laufwerksbuchstabe zugewiesen ist.
-- Wird u. a. für Netzlaufwerke (siehe Auftrag 7), Skripte und GPOs benötigt.
-- Siehe [Wikipedia: Uniform Naming Convention](https://de.wikipedia.org/wiki/Uniform_Naming_Convention) sowie die Übung `uebung-unc.docx` aus den Unterrichtsressourcen.
+- Funktioniert ohne zugewiesenen Laufwerksbuchstaben.
+- Wird für Netzlaufwerke (Auftrag 7), Skripte und GPOs benötigt.
+- Der Servername kann als Hostname (`DC01`) oder FQDN (`DC01.dc001.tbz.m159`) angegeben werden.
+
+Quellen: [Wikipedia: Uniform Naming Convention](https://de.wikipedia.org/wiki/Uniform_Naming_Convention) und die Übung `uebung-unc.docx`.
 
 ---
 
-## 3. Ordner- und Freigabestruktur erstellen + ABE aktivieren
+## 3. Ordner und Freigaben erstellen + ABE aktivieren
 
-### 3.1 Ordnerstruktur anlegen
+### 3.1 Ordnerstruktur
 
-Auf DC1 (oder dem vorgesehenen Fileserver) lokal die Ordnerstruktur gemäss der Vorgabetabelle aus dem Auftrag anlegen, z. B. unter `D:\Freigaben\`:
+Auf DC01 unter `C:\Freigaben\Daten`:
 
 ```
-D:\Freigaben\Daten
-D:\Freigaben\Daten\Sekretariat
-D:\Freigaben\Daten\Buchhaltung
-D:\Freigaben\Daten\GL
-D:\Freigaben\Daten\Pool
-D:\Freigaben\Daten\Aussendienst
+Daten
+├── Sekretariat
+├── Buchhaltung
+├── GL
+├── Pool
+├── Aussendienst
+└── Promoter
 ```
 
-> Die exakten Ordnernamen und die zugehörige Berechtigungsmatrix (R/C/– pro Abteilung und Ordner) entnimmst du der Tabelle im Auftrag («05-table1.png»). Trage sie dir am besten in eine eigene Tabelle in dieser Doku ein, z. B.:
+### 3.2 Berechtigungsmatrix
+
+R = Read (NTFS: *Lesen, Ausführen*), C = Change (NTFS: *Ändern*), – = kein Zugriff (kein Eintrag).
+
+<!-- HINWEIS: Diese Matrix mit dem Bild «05-table1.png» aus dem Auftrag abgleichen und bei Abweichungen anpassen. -->
 
 | Ordner        | Sekretariat | Buchhaltung | GL | Promoter | LB (Auftrag 7) |
-|---------------|:-----------:|:-----------:|:--:|:--------:|:---------------:|
-| Buchhaltung   | R           | C           | C  | –        | |
-| Pool          | C           | C           | C  | –        | |
-| Aussendienst  | –           | –           | C  | C        | |
-| …             |             |             |    |          | |
+|---------------|:-----------:|:-----------:|:--:|:--------:|:--------------:|
+| Sekretariat   | C | – | – | – | |
+| Buchhaltung   | R | C | C | – | |
+| GL            | – | – | C | – | |
+| Pool          | C | C | C | – | |
+| Aussendienst  | – | – | C | – | |
+| Promoter      | – | – | R | C | |
 
-*(R = Read, C = Change, – = kein Zugriff — Werte hier durch deine tatsächliche Matrix ersetzen; für die volle Punktzahl reichen die grün markierten Zeilen aus dem Auftrag.)*
+Die Gruppen `Intern` und `Extern` erhalten auf `Daten` selbst nur *Lesen, Ausführen* **nur für diesen Ordner**. So können alle Benutzer die Freigabe betreten, und ABE (Kap. 5) blendet alles aus, worauf sie keine Rechte haben.
 
-### 3.2 Freigaben erstellen
+### 3.3 Freigabe erstellen (Freigabeberechtigung)
 
-Für die oberste Ebene (`Daten`) und ggf. weitere separat definierte Freigaben:
+1. Rechtsklick auf `Daten` → *Properties* → *Sharing* → *Advanced Sharing*.
+2. *Share this folder* aktivieren, Freigabename `Daten`.
+3. *Permissions* → **Everyone** → **Change** erlauben (Freigabeberechtigung, nicht NTFS).
 
-1. Rechtsklick auf den Ordner → **Properties** → Tab **Sharing** → **Advanced Sharing**.
-2. **Share this folder** aktivieren, Freigabename vergeben (z. B. `Daten`).
-3. Auf **Permissions** klicken → **Everyone** → Häkchen bei **Change** setzen (Freigabeberechtigung, nicht NTFS!).
-4. Mit **OK** bestätigen.
-
-Alternativ per PowerShell:
 ```powershell
-New-SmbShare -Name "Daten" -Path "D:\Freigaben\Daten" -FullAccess "Everyone"
-# oder gezielt nur Change:
-Grant-SmbShareAccess -Name "Daten" -AccountName "Everyone" -AccessRight Change -Force
+New-SmbShare -Name "Daten" -Path "C:\Freigaben\Daten" -ChangeAccess "Everyone" -FolderEnumerationMode AccessBased
 ```
 
-> **Wichtig:** Die Freigabeberechtigung «Jeder = Ändern/Change» ist bewusst grosszügig – die eigentliche Feinsteuerung erfolgt über die **NTFS-Berechtigungen** (siehe 3.4). Freigabe- und NTFS-Berechtigungen werden kombiniert; es gilt immer die **restriktivere** der beiden.
+Die Freigabeberechtigung «Jeder = Ändern» ist bewusst grosszügig. Die eigentliche Steuerung erfolgt über NTFS. Freigabe- und NTFS-Berechtigungen werden kombiniert, es gilt immer die **restriktivere**.
 
-### 3.3 Vererbung auf «Daten» und Unterordnern deaktivieren
+### 3.4 Vererbung deaktivieren
 
-1. Rechtsklick auf den Ordner `Daten` → **Properties** → Tab **Security** → **Advanced**.
-2. **Disable inheritance** klicken.
-3. Im Dialog **Convert inherited permissions into explicit permissions on this object** wählen (damit die bisherigen Berechtigungen erst mal erhalten bleiben, bevor du sie bereinigst).
-4. Diesen Schritt für **jeden Unterordner** von `Daten` wiederholen (Sekretariat, Buchhaltung, GL, Pool, Aussendienst, …).
+Auf `Daten` und **allen Unterordnern**:
 
-### 3.4 Standardgruppe «Domänenbenutzer» entfernen
+1. Rechtsklick → *Properties* → *Security* → *Advanced* → **Disable inheritance**.
+2. Es werden nur noch die explizit gesetzten Einträge verwendet.
 
-Nach dem Deaktivieren der Vererbung ist auf jedem Ordner meist noch die Gruppe **Domänen-Benutzer** (Domain Users) mit Vollzugriff/Lesen vorhanden (aus der Konvertierung in 3.3 oder als Windows-Standard):
-
-1. **Security** → **Edit** (bzw. **Advanced** → Eintrag auswählen → **Remove**).
-2. Eintrag **Domänen-Benutzer** markieren → **Remove**.
-3. Für **alle** Ordner der Struktur wiederholen.
-
-### 3.5 NTFS-Berechtigungen gemäss Matrix vergeben
-
-Für jeden Ordner die passenden Abteilungsgruppen (aus Kap. 1.2) mit den Rechten aus deiner Matrix eintragen:
-
-1. Rechtsklick auf den Ordner → **Properties** → **Security** → **Edit** → **Add**.
-2. Gruppenname eingeben (z. B. `G_Buchhaltung`), **Check Names**, **OK**.
-3. Häkchen setzen:
-   - **R (Read)** → NTFS-Berechtigung **Read & execute** (+ List folder contents, Read).
-   - **C (Change)** → NTFS-Berechtigung **Modify** (enthält Read & execute, Write, sowie Löschen innerhalb des Ordners, aber kein «Full control»/keine Berechtigungsänderung).
-   - **–** → Gruppe wird **nicht** hinzugefügt (kein Eintrag = kein Zugriff, sofern auch nicht über eine andere Gruppenmitgliedschaft geerbt).
-4. Für jeden Ordner die entsprechenden Zeilen aus deiner Matrix durchgehen (mind. die grün markierten Zeilen).
-
-Alternativ per PowerShell (`icacls`):
 ```powershell
-icacls "D:\Freigaben\Daten\Buchhaltung" /grant "M159\G_Buchhaltung:(OI)(CI)M"
-icacls "D:\Freigaben\Daten\Buchhaltung" /grant "M159\G_Sekretariat:(OI)(CI)RX"
+icacls "C:\Freigaben\Daten" /inheritance:r
 ```
-(`M` = Modify/Change, `RX` = Read & Execute, `(OI)(CI)` = Vererbung auf Unterordner/Dateien)
+
+Danach sind auf jedem Ordner nur noch **SYSTEM** und **Administratoren** (Vollzugriff) eingetragen, alle übrigen Rechte werden gezielt neu vergeben.
+
+### 3.5 Standardgruppe «Domänen-Benutzer» entfernen
+
+Auf jedem Ordner muss die Gruppe **Domänen-Benutzer** (`Domain Users`, SID endet auf `-513`) sowie die lokale Gruppe `Users` entfernt sein. Sonst hätte jeder angemeldete Domänenbenutzer Zugriff und die Matrix würde unterlaufen.
+
+```powershell
+icacls "C:\Freigaben\Daten\Buchhaltung" /remove "*<Domain-SID>-513"
+```
+
+### 3.6 NTFS-Berechtigungen nach Matrix
+
+Pro Ordner die Abteilungsgruppen aus Kap. 1.3 mit den Rechten aus Kap. 3.2 eintragen:
+
+1. *Properties* → *Security* → *Edit* → *Add* → Gruppe eingeben → *Check Names*.
+2. **R** → *Read & execute*, **C** → *Modify*.
+
+```powershell
+icacls "C:\Freigaben\Daten\Buchhaltung" /grant "<NETBIOS>\G_Buchhaltung:(OI)(CI)(M)"
+icacls "C:\Freigaben\Daten\Buchhaltung" /grant "<NETBIOS>\G_Sekretariat:(OI)(CI)(RX)"
+```
+(`M` = Modify, `RX` = Read & Execute, `(OI)(CI)` = Vererbung auf Unterordner und Dateien)
+
+Kontrolle: `icacls "C:\Freigaben\Daten\Buchhaltung"` bzw. im Explorer unter *Security*.
 
 ---
 
 ## 4. Berechtigungen testen
 
-Mit den jeweiligen Testbenutzern anmelden und über den UNC-Pfad prüfen:
+Anmeldung am Client per RDP mit dem jeweiligen Testbenutzer, dann UNC-Pfad im Explorer aufrufen und eine Textdatei anlegen.
 
-| Test | Benutzer aus Abteilung | UNC-Pfad | Erwartetes Ergebnis |
-|------|--------------------------|----------|------------------------|
-| 1 | Sekretariat | `\\dc1\Daten\Buchhaltung` | **Lesen** möglich, aber kein Schreiben |
-| 2 | GL | `\\dc1\Daten\Pool` | **Schreiben** möglich (Datei anlegen/ändern) |
-| 3 | Promoter | Laufwerk «Aussendienst» | **Kein Zugriff** (Ordner nicht sichtbar/„Access denied") |
+| Test | Benutzer (Abteilung) | UNC-Pfad | Erwartet | Ergebnis |
+|---|---|---|---|---|
+| 1 | `a.keller` (Sekretariat) | `\\DC01\Daten\Buchhaltung` | Lesen ja, Schreiben nein | *Screenshot einfügen* |
+| 2 | `p.steiner` (GL) | `\\DC01\Daten\Pool` | Schreiben ja | *Screenshot einfügen* |
+| 3 | `n.brunner` (Promoter) | `\\DC01\Daten\Aussendienst` | kein Zugriff | *Screenshot einfügen* |
 
-Vorgehen je Test:
-1. Am Client mit dem entsprechenden Testbenutzer anmelden (oder **Ausführen als** nutzen).
-2. Im Explorer den UNC-Pfad eingeben.
-3. Versuchen, eine Testdatei zu erstellen/zu öffnen/zu löschen.
-4. Ergebnis in der Doku festhalten (Screenshot empfohlen).
-
-Falls ein Test nicht das erwartete Ergebnis liefert:
-- Gruppenmitgliedschaft des Testbenutzers prüfen (`Get-ADUser -Identity <user> -Properties MemberOf` bzw. `whoami /groups` auf dem Client nach Neuanmeldung – Gruppenmitgliedschaften wirken erst nach neuem Logon/Kerberos-Ticket).
-- Kombination aus Freigabe- **und** NTFS-Berechtigung prüfen (das restriktivere Recht gewinnt).
-- Prüfen, ob die Vererbung wirklich korrekt deaktiviert und «Domänen-Benutzer» überall entfernt wurde.
+Falls ein Test nicht wie erwartet ausfällt:
+- Gruppenmitgliedschaft prüfen (`whoami /groups` nach neuer Anmeldung).
+- Freigabe- **und** NTFS-Berechtigung prüfen, das restriktivere Recht gewinnt.
+- Prüfen, ob die Vererbung deaktiviert und «Domänen-Benutzer» überall entfernt ist.
 
 ---
 
@@ -202,125 +210,147 @@ Falls ein Test nicht das erwartete Ergebnis liefert:
 
 ### 5.1 Was ist ABE?
 
-**Access-Based Enumeration** sorgt dafür, dass Benutzer in einer Freigabe nur die Ordner/Dateien **sehen**, auf die sie mindestens Leserechte haben. Ordner, für die keine Berechtigung besteht, werden im Explorer gar nicht erst angezeigt (statt sichtbar zu sein und erst beim Öffnen eine Fehlermeldung zu liefern). Das reduziert Verwirrung und verringert das Risiko, dass Struktur/Namen sensibler Ordner ausgespäht werden.
+Access-Based Enumeration zeigt einem Benutzer in einer Freigabe nur die Ordner und Dateien an, auf die er mindestens Leserechte hat. Ordner ohne Berechtigung sind im Explorer nicht sichtbar, statt erst beim Öffnen eine Fehlermeldung zu liefern. Das schützt die Struktur sensibler Ordner vor neugierigen Blicken und macht die Ansicht übersichtlicher.
+
+ABE prüft die **NTFS-Rechte**. Deshalb brauchen `Intern` und `Extern` das Recht *Lesen, Ausführen* auf `Daten`, sonst könnte niemand die Freigabe betreten.
 
 ### 5.2 ABE aktivieren
 
-Für **jede Freigabe**:
+*Server Manager* → *File and Storage Services* → *Shares* → Freigabe → *Properties* → *Settings* → **Enable access-based enumeration**.
 
-1. **Server Manager** → **File and Storage Services** → **Shares**.
-2. Freigabe auswählen → Rechtsklick → **Properties**.
-3. Tab **Settings** → Häkchen bei **Enable access-based enumeration** setzen → **OK**.
-
-Alternativ per PowerShell:
 ```powershell
 Set-SmbShare -Name "Daten" -FolderEnumerationMode AccessBased -Force
+Get-SmbShare -Name "Daten" | Select-Object Name, FolderEnumerationMode
 ```
 
-4. Test: Mit einem Benutzer ohne Zugriff auf einen Unterordner anmelden und prüfen, dass dieser Ordner im Explorer gar nicht mehr auftaucht.
+### 5.3 Test
+
+Als `n.brunner` (Promoter) `\\DC01\Daten` öffnen: Es sind nur die Ordner sichtbar, auf die Promoter Zugriff hat (`Promoter`). `Buchhaltung`, `Pool` und `Aussendienst` erscheinen gar nicht. *Screenshot einfügen.*
 
 ---
 
 ## 6. Eigenes Group-Nesting-Konzept (AGDLP)
 
-### 6.1 Ausgangslage / Schwachstelle der vorgegebenen Struktur
+### 6.1 Schwachstelle der vorgegebenen Struktur
 
-In der vorgegebenen Struktur werden **Abteilungsgruppen direkt mit NTFS-Rechten** auf den Ordnern verknüpft (Abteilung = Berechtigungsgruppe). Das hat Nachteile:
-- Eine Abteilung kann nicht granular unterschiedliche Rechte auf verschiedene Ressourcen bekommen, ohne die Gruppenstruktur zu verändern.
-- Ändert sich, wer worauf Zugriff braucht, muss ggf. direkt an der Ressource geschraubt werden statt nur an der Gruppenmitgliedschaft.
-- Rollen (z. B. „braucht Schreibzugriff auf Pool") und Abteilungszugehörigkeit sind vermischt.
+In der Vorgabe erhalten die Abteilungsgruppen ihre NTFS-Rechte **direkt** auf den Ordnern. Das hat Nachteile:
+
+- Rolle (Abteilungszugehörigkeit) und Berechtigung (Recht auf eine Ressource) sind vermischt.
+- Ändert sich, wer worauf Zugriff braucht, muss an den Ordnern selbst gearbeitet werden. Bei vielen Ordnern ist das aufwendig und fehleranfällig.
+- Es ist schwer nachzuvollziehen, welche Gruppe auf welchem Ordner welches Recht hat.
 
 ### 6.2 AGDLP-Prinzip
 
-**AGDLP** = **A**ccounts → **G**lobal Groups → **D**omain **L**ocal Groups → **P**ermissions
+**A**ccounts → **G**lobal Groups → **D**omain **L**ocal Groups → **P**ermissions
 
 | Ebene | Zweck |
-|-------|-------|
+|---|---|
 | **A**ccounts | Einzelne Benutzerkonten |
-| **G**lobal Groups | Fassen Benutzer nach **Rolle/Abteilung** zusammen (forestweit nutzbar) |
-| **D**omain **L**ocal Groups | Fassen **Berechtigungen auf eine konkrete Ressource** zusammen (z. B. „Lesen auf Ordner X") |
-| **P**ermissions | Werden **nur** an Domain-Local-Gruppen vergeben, nie direkt an User oder globale Gruppen |
+| **G**lobal Groups | Fassen Benutzer nach Rolle/Abteilung zusammen (`G_Buchhaltung`, `G_GL`) |
+| **D**omain **L**ocal Groups | Fassen die Berechtigung auf **eine** Ressource zusammen, benannt `DL_<Ordner>_<Recht>` |
+| **P**ermissions | Werden nur an Domain-Local-Gruppen vergeben, nie direkt an User oder globale Gruppen |
 
-Vorteil: Rollen (globale Gruppen) und Berechtigungen (domänenlokale Gruppen) sind sauber getrennt. Eine globale Gruppe kann in mehrere domänenlokale Gruppen aufgenommen werden (z. B. GL braucht Lesen auf Buchhaltung **und** Schreiben auf Pool), ohne dass NTFS-Listen direkt angefasst werden müssen.
+Vorteil: Wer welche Rolle hat, und wer welches Recht bekommt, sind zwei getrennte Fragen. Eine Rolle kann in mehrere DL-Gruppen aufgenommen werden, ohne die Ordner anzufassen.
 
-### 6.3 Neue Struktur für zwei Beispiel-Abteilungen
+### 6.3 Neue Struktur für zwei Abteilungen
 
-**Rollengruppen (Global):**
-- `G_Buchhaltung`
-- `G_GL`
+Umgestellt wurden die Abteilungen **Buchhaltung** und **GL**. `G_Sekretariat` und `G_Promoter` behalten vorerst ihre direkten Rechte.
 
-**Berechtigungsgruppen (Domain Local), benannt nach Ressource + Recht:**
-- `DL_Buchhaltung_Read`
-- `DL_Buchhaltung_Modify`
-- `DL_Pool_Modify`
-- `DL_Aussendienst_Modify`
-
-**Zuordnung (Beispiel):**
-
-| Domain-Local-Gruppe | NTFS-Recht auf | Enthält (Global Group) |
-|----------------------|----------------|--------------------------|
-| `DL_Buchhaltung_Read`   | `Daten\Buchhaltung` | `G_Sekretariat` |
+| Domain-Local-Gruppe | NTFS-Recht auf | Mitglieder (Global Groups) |
+|---|---|---|
 | `DL_Buchhaltung_Modify` | `Daten\Buchhaltung` | `G_Buchhaltung`, `G_GL` |
-| `DL_Pool_Modify`        | `Daten\Pool`        | `G_Buchhaltung`, `G_GL`, `G_Sekretariat` |
-| `DL_Aussendienst_Modify`| `Daten\Aussendienst`| `G_GL`, `G_Promoter` |
+| `DL_GL_Modify` | `Daten\GL` | `G_GL` |
+| `DL_Pool_Modify` | `Daten\Pool` | `G_Buchhaltung`, `G_GL` |
+| `DL_Aussendienst_Modify` | `Daten\Aussendienst` | `G_GL` |
+| `DL_Promoter_Read` | `Daten\Promoter` | `G_GL` |
+
+Direkt vergeben (nicht umgestellt): `G_Sekretariat` (Read auf Buchhaltung, Change auf Sekretariat und Pool), `G_Promoter` (Change auf Promoter).
 
 ```mermaid
 graph LR
-    subgraph Accounts
-        U1[User Sekretariat]
-        U2[User Buchhaltung]
-        U3[User GL]
+    subgraph A["Accounts"]
+        U1["s.frei, t.baumann"]
+        U2["p.steiner, l.meier"]
     end
-    subgraph "Global Groups (Rolle/Abteilung)"
-        G1[G_Sekretariat]
-        G2[G_Buchhaltung]
-        G3[G_GL]
+    subgraph G["Global Groups (Rolle)"]
+        G1["G_Buchhaltung"]
+        G2["G_GL"]
+        G3["G_Sekretariat"]
+        G4["G_Promoter"]
     end
-    subgraph "Domain Local Groups (Berechtigung)"
-        DL1[DL_Buchhaltung_Read]
-        DL2[DL_Buchhaltung_Modify]
-        DL3[DL_Pool_Modify]
+    subgraph DL["Domain Local Groups (Berechtigung)"]
+        DL1["DL_Buchhaltung_Modify"]
+        DL2["DL_GL_Modify"]
+        DL3["DL_Pool_Modify"]
+        DL4["DL_Aussendienst_Modify"]
+        DL5["DL_Promoter_Read"]
     end
-    subgraph Ressourcen
-        R1[(Daten/Buchhaltung)]
-        R2[(Daten/Pool)]
+    subgraph P["Ordner (NTFS)"]
+        R1[("Daten\Buchhaltung")]
+        R2[("Daten\GL")]
+        R3[("Daten\Pool")]
+        R4[("Daten\Aussendienst")]
+        R5[("Daten\Promoter")]
     end
 
     U1 --> G1
     U2 --> G2
-    U3 --> G3
 
     G1 --> DL1
+    G2 --> DL1
     G2 --> DL2
-    G3 --> DL2
     G1 --> DL3
     G2 --> DL3
-    G3 --> DL3
+    G2 --> DL4
+    G2 --> DL5
 
-    DL1 -- Read --> R1
-    DL2 -- Modify --> R1
-    DL3 -- Modify --> R2
+    DL1 -- Modify --> R1
+    DL2 -- Modify --> R2
+    DL3 -- Modify --> R3
+    DL4 -- Modify --> R4
+    DL5 -- Read --> R5
+
+    G3 -. "direkt: Read" .-> R1
+    G4 -. "direkt: Modify" .-> R5
 ```
 
-### 6.4 Umsetzung für zwei Abteilungen (praktisch)
+### 6.4 Umsetzung
 
-1. Domain-Local-Gruppen anlegen:
+1. Domain-Local-Gruppen in der OU `Gruppen` anlegen:
    ```powershell
-   New-ADGroup -Name "DL_Buchhaltung_Modify" -GroupScope DomainLocal -GroupCategory Security -Path "OU=Gruppen,DC=m159,DC=tbz"
-   New-ADGroup -Name "DL_Pool_Modify" -GroupScope DomainLocal -GroupCategory Security -Path "OU=Gruppen,DC=m159,DC=tbz"
+   New-ADGroup -Name "DL_Buchhaltung_Modify" -GroupScope DomainLocal -GroupCategory Security -Path "OU=Gruppen,DC=dc001,DC=tbz,DC=m159"
    ```
-2. Globale Rollengruppen als Mitglieder der Domain-Local-Gruppen eintragen:
+2. Globale Gruppen als Mitglieder eintragen:
    ```powershell
    Add-ADGroupMember -Identity "DL_Buchhaltung_Modify" -Members "G_Buchhaltung","G_GL"
-   Add-ADGroupMember -Identity "DL_Pool_Modify" -Members "G_Buchhaltung","G_GL","G_Sekretariat"
    ```
-3. Auf den betroffenen Ordnern die **bisherigen direkten Abteilungsgruppen-Einträge entfernen** und stattdessen die passende **DL-Gruppe** mit dem jeweiligen NTFS-Recht eintragen (siehe Vorgehen aus Kap. 3.5).
-4. Mit denselben Testbenutzern wie in Kap. 4 erneut prüfen, dass sich am tatsächlichen Zugriffsverhalten nichts geändert hat – nur die zugrunde liegende Struktur ist jetzt sauberer/erweiterbar.
+3. Auf dem Ordner den direkten Eintrag der globalen Gruppe entfernen und stattdessen die DL-Gruppe eintragen:
+   ```powershell
+   icacls "C:\Freigaben\Daten\Buchhaltung" /remove:g "<NETBIOS>\G_Buchhaltung"
+   icacls "C:\Freigaben\Daten\Buchhaltung" /grant:r "<NETBIOS>\DL_Buchhaltung_Modify:(OI)(CI)(M)"
+   ```
+4. Alle Benutzer melden sich neu an, damit die neuen Gruppenmitgliedschaften im Kerberos-Ticket erscheinen.
+5. Die Tests aus Kap. 4 wiederholen. Die Zugriffe müssen **unverändert** sein, nur die Struktur dahinter ist sauberer.
+
+Kontrolle der neuen Gruppen:
+```powershell
+Get-ADGroup -Filter "Name -like 'DL_*'" | ForEach-Object {
+    "{0} <- {1}" -f $_.Name, ((Get-ADGroupMember $_).Name -join ', ')
+}
+```
+
+### 6.5 Warum ist das besser?
+
+- **Trennung von Rolle und Recht:** Neue Mitarbeitende kommen nur in die Rollengruppe, die Ordner werden nicht angefasst.
+- **Übersicht:** Der Gruppenname verrät Ordner und Recht (`DL_Pool_Modify`). Wer Zugriff hat, sieht man an den Mitgliedern der DL-Gruppe.
+- **Änderungen an einer Stelle:** Ein zusätzliches Team bekommt Zugriff auf `Pool`, indem seine globale Gruppe Mitglied von `DL_Pool_Modify` wird.
+- **Skalierbarkeit:** Funktioniert auch bei mehreren Domänen, weil globale Gruppen domänenübergreifend in DL-Gruppen aufgenommen werden können.
 
 ---
 
-## Offene Punkte zum Nachtragen
+## 7. Zusammenfassung / Begründungen
 
-- [ ] Tatsächliche Ordner-/Freigabestruktur und Berechtigungsmatrix aus dem Auftrag (Tabellenbild) hier einfügen bzw. verlinken.
-- [ ] Screenshots der Testergebnisse (Kap. 4) ergänzen.
-- [ ] Konkrete Benutzer-/Gruppennamen gemäss eigenem Setup-Sheet final abgleichen.
+- **Freigabe- vs. NTFS-Rechte:** Die Freigabe (`Jeder = Ändern`) ist die grobe Tür ins Netzwerk, NTFS regelt fein, wer was darf. Es gilt die restriktivere Kombination.
+- **Vererbung aus, Domänen-Benutzer entfernt:** Damit kommt niemand über Standardrechte an Ordner, die er laut Matrix nicht sehen darf.
+- **ABE:** Nicht zugängliche Ordner werden gar nicht erst angezeigt.
+- **AGDLP:** Rollen (global) und Berechtigungen (domänenlokal) sind getrennt, was Änderungen einfacher und weniger fehleranfällig macht.
