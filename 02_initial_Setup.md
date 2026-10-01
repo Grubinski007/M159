@@ -21,6 +21,8 @@ Diese Doku beschreibt, wie du den Auftrag aus dem Readme ("Initial Setup") umset
 4. Subnetz-CIDRs im Assistenten so anpassen, dass sie zu deiner Planung passen (bzw. die vom Assistenten vorgeschlagenen übernehmen und in dein Setup-Sheet eintragen).
 5. Nach der Erstellung: Subnetze umbenennen gemäss Namenskonvention aus dem Sheet (`M159-subnet-public1-us-east-1a` usw.), falls der Assistent generische Namen vergeben hat.
 
+![Erstellter VPC](image.png)
+
 ### 1.2 Security Groups konfigurieren
 
 1. **VPC → Security Groups** → die vom Assistenten erstellten Security Groups (oder neue) auswählen.
@@ -44,8 +46,8 @@ Diese Doku beschreibt, wie du den Auftrag aus dem Readme ("Initial Setup") umset
 3. Instanz starten, danach **Elastic IP** reservieren und der Instanz zuweisen, falls sie öffentlich erreichbar sein soll (feste öffentliche IP statt wechselnder Auto-IP).
 4. Wiederholen für jede weitere Instanz.
 
-
-
+![Client](image3.png)
+![DC01](image4.png)
 ---
 
 ## 2. Windows-Einstellungen vornehmen
@@ -104,3 +106,6 @@ Für die folgenden Punkte gibt es ein fertiges PowerShell-Skript (`Configure-Win
 3. Auf jedem Server per RDP verbinden und **`Configure-WindowsSettings.ps1`** ausführen (Hostname im Skript vorher anpassen!).
 4. Neustart, danach Kontrolle: Hostname, Ping-Antwort, Tastaturlayout, IPv6 deaktiviert, (bei Desktop:) IE ESC aus, Ordneroptionen, Desktopsymbole, Verknüpfungen.
 5. Danach weiter mit dem eigentlichen AD-Setup (siehe separate Anleitung `M159-Umsetzungsanleitung.md`).
+
+
+![Desktop](image5.png)
