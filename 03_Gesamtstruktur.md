@@ -176,4 +176,4 @@ Im **Active Directory Users and Computers** (auf DC1):
 
 
 ![Client Ergebnis](image6.png)
-![DC01 Ergebnis](image7.png)
+![DC Ergebnis](image7.png)
