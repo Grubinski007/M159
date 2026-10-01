@@ -338,7 +338,7 @@ Get-ADGroup -Filter "Name -like 'DL_*'" | ForEach-Object {
     "{0} <- {1}" -f $_.Name, ((Get-ADGroupMember $_).Name -join ', ')
 }
 ```
-![DC01 Ergebnis](image8.png)
+![DC001](image8.png)
 
 ### 6.5 Warum ist das besser?
 
