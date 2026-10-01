@@ -338,6 +338,7 @@ Get-ADGroup -Filter "Name -like 'DL_*'" | ForEach-Object {
     "{0} <- {1}" -f $_.Name, ((Get-ADGroupMember $_).Name -join ', ')
 }
 ```
+![DC01 Ergebnis](image8.png)
 
 ### 6.5 Warum ist das besser?
 
@@ -354,3 +355,4 @@ Get-ADGroup -Filter "Name -like 'DL_*'" | ForEach-Object {
 - **Vererbung aus, Domänen-Benutzer entfernt:** Damit kommt niemand über Standardrechte an Ordner, die er laut Matrix nicht sehen darf.
 - **ABE:** Nicht zugängliche Ordner werden gar nicht erst angezeigt.
 - **AGDLP:** Rollen (global) und Berechtigungen (domänenlokal) sind getrennt, was Änderungen einfacher und weniger fehleranfällig macht.
+

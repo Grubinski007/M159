@@ -173,3 +173,7 @@ Im **Active Directory Users and Computers** (auf DC1):
 
 - Mit einem Benutzer aus `RDP-Users` versuchen, sich per RDP am Client anzumelden → sollte funktionieren.
 - Mit einem Benutzer, der in **keiner** der beiden Gruppen ist, testen → RDP-Verbindung sollte mit einer Berechtigungsfehlermeldung abgelehnt werden.
+
+
+![Client Ergebnis](image6.png)
+![DC01 Ergebnis](image7.png)
