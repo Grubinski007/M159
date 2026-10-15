@@ -193,11 +193,11 @@ Kontrolle: `icacls "C:\Freigaben\Daten\Buchhaltung"` bzw. im Explorer unter *Sec
 
 Anmeldung am Client per RDP mit dem jeweiligen Testbenutzer, dann UNC-Pfad im Explorer aufrufen und eine Textdatei anlegen.
 
-| Test | Benutzer (Abteilung) | UNC-Pfad | Erwartet | Ergebnis |
+| Test | Benutzer (Abteilung) | UNC-Pfad | Erwartet |
 |---|---|---|---|---|
-| 1 | `a.keller` (Sekretariat) | `\\DC01\Daten\Buchhaltung` | Lesen ja, Schreiben nein | *Screenshot einfügen* |
-| 2 | `p.steiner` (GL) | `\\DC01\Daten\Pool` | Schreiben ja | *Screenshot einfügen* |
-| 3 | `n.brunner` (Promoter) | `\\DC01\Daten\Aussendienst` | kein Zugriff | *Screenshot einfügen* |
+| 1 | `a.keller` (Sekretariat) | `\\DC01\Daten\Buchhaltung` | Lesen ja, Schreiben nein |
+| 2 | `p.steiner` (GL) | `\\DC01\Daten\Pool` | Schreiben ja |
+| 3 | `n.brunner` (Promoter) | `\\DC01\Daten\Aussendienst` | kein Zugriff | 
 
 Falls ein Test nicht wie erwartet ausfällt:
 - Gruppenmitgliedschaft prüfen (`whoami /groups` nach neuer Anmeldung).
