@@ -264,6 +264,9 @@ Beide Drucker wurden freigegeben (Rechtsklick → Freigabe → Freigabename wie 
    - Freigabeberechtigung: **Jeder / Everyone** → Lesen
 6. Erfolgreiche Installation wurde in der **Ereignisanzeige** des Testclients nachgewiesen: *Windows-Protokolle → Anwendung*, Quelle `MsiInstaller`, Ereignis-ID `1042`/`11707` ("Product: 7-Zip -- Installation completed successfully").
 
+![Funktioniert](Bilder/IMage.png)
+![](<Bilder/Image 103.png>)
+
 ## 6. Fazit
 
 Die Kombination aus einem sauber geplanten Directory Information Tree und einer konsequenten OU-Struktur (getrennt nach Intern/Extern, je Abteilung mit eigener Benutzer- und Computer-OU) hat die spätere Verteilung der Gruppenrichtlinien erheblich vereinfacht, da GPOs gezielt auf einzelne OUs statt auf einzelne Benutzer verknüpft werden konnten. Die grösste Herausforderung stellte Teil 6 dar: Die klassische GPO-Softwareinstallation unterstützt kein echtes Item-Level-Targeting, weshalb die Einschränkung auf die Gruppe `7-Zip` über Sicherheitsfilterung realisiert wurde. Zusätzlich zeigte der Fehler %%1274, wie wichtig die Berechtigungsprüfung auf Freigabeebene ist, da Computerkonten beim Systemstart noch nicht als authentifizierter Benutzer, sondern im Systemkontext auf Netzwerkfreigaben zugreifen.

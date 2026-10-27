@@ -217,6 +217,8 @@ Die Zuweisung erfolgt im Azure-Portal unter *Share → Zugriffskontrolle (IAM) �
 
 ## 9. Test
 
+![Test](<Bilder/Image 44444444.png>)
+
 ### 9.1 Voraussetzung: Hybrid Join und SSO
 
 Auf dem Client wurde der Gerätestatus geprüft:

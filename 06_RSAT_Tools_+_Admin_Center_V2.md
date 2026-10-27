@@ -167,6 +167,8 @@ Anschliessend wurde der Domain Controller im Admin Center über **Alle Verbindun
 
 ![add-dc-admin-center](resources/add-dc-admin-center.png)
 
+![Installation](<Bilder/Screenshot 2026-10-27 090645.png>)
+
 ## 6. Externer Zugriff auf das Admin Center (HTTPS/RDP)
 
 Da sich die Admin-Center-Instanz in einem privaten Subnetz befindet, ist sie standardmässig nicht aus dem Internet erreichbar. Für den Zugriff von aussen wurden folgende Sicherheitsüberlegungen berücksichtigt:

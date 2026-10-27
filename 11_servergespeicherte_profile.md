@@ -4,13 +4,20 @@ Domäne: `firma.local`
 
 ## Inhaltsverzeichnis
 
-1. [Einleitung](#1-einleitung)
-2. [Umgebung](#2-umgebung)
-3. [Freigabe vorbereiten](#3-freigabe-vorbereiten)
-4. [FSLogix installieren](#4-fslogix-installieren)
-5. [FSLogix per Gruppenrichtlinie konfigurieren](#5-fslogix-per-gruppenrichtlinie-konfigurieren)
-6. [Test](#6-test)
-7. [Fazit](#7-fazit)
+- [Dokumentation – Servergespeicherte Benutzerprofile (FSLogix Profile Container)](#dokumentation--servergespeicherte-benutzerprofile-fslogix-profile-container)
+  - [Inhaltsverzeichnis](#inhaltsverzeichnis)
+  - [1. Einleitung](#1-einleitung)
+  - [2. Umgebung](#2-umgebung)
+  - [3. Freigabe vorbereiten](#3-freigabe-vorbereiten)
+    - [3.1 Ordner und Freigabe](#31-ordner-und-freigabe)
+    - [3.2 Berechtigungen](#32-berechtigungen)
+    - [3.3 Begründung](#33-begründung)
+  - [4. FSLogix installieren](#4-fslogix-installieren)
+    - [4.1 Agent auf beiden Clients](#41-agent-auf-beiden-clients)
+    - [4.2 Gruppenrichtlinienvorlagen auf dem Server](#42-gruppenrichtlinienvorlagen-auf-dem-server)
+  - [5. FSLogix per Gruppenrichtlinie konfigurieren](#5-fslogix-per-gruppenrichtlinie-konfigurieren)
+  - [6. Test](#6-test)
+  - [7. Fazit](#7-fazit)
 
 ---
 
@@ -26,6 +33,8 @@ graph LR
     A -->|"hängt VHDX ein"| S["\\\\dc01\\Profiles\\Benutzer\\Profile.vhdx"]
     S -->|"erscheint als Profil"| P["C:\\Users\\Benutzer"]
 ```
+
+
 
 ## 2. Umgebung
 
@@ -169,6 +178,8 @@ Get-ItemProperty HKLM:\SOFTWARE\FSLogix\Profiles
 [Screenshot: Ausgabe mit `Enabled`, `VHDLocations` und `VolumeType`]
 
 Falls die Einstellungen nicht ankommen, hilft `gpresult /r` (Verknüpfung, richtige OU, Computer- statt Benutzerkonfiguration).
+
+![Test](Bilder/Image3333333.png)
 
 ## 6. Test
 

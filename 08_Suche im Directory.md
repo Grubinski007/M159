@@ -169,6 +169,8 @@ gpresult /r
   wurden nicht angewendet, weil sie gefiltert wurden» mit dem Grund «Zielgruppenadressierung
   fehlgeschlagen» — die Verknüpfung fehlt auf dem Desktop.
 
+![Funktioniert](Bilder/Image22220.png)
+
 ## Teil 5 – Konfigurationsblatt
 
 > Das Original-Formular `resources/firewall-konfigurationsblatt.md` lag mir nicht vor. Die
