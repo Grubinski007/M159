@@ -4,15 +4,22 @@ Domänen: `ec2.firma.local` (eigenes AD auf EC2) und `aws.firma.local` (AWS Mana
 
 ## Inhaltsverzeichnis
 
-1. [Einleitung](#1-einleitung)
-2. [Umgebung](#2-umgebung)
-3. [AWS Managed AD erstellen](#3-aws-managed-ad-erstellen)
-4. [Ports und Sicherheitsgruppen](#4-ports-und-sicherheitsgruppen)
-5. [Conditional Forwarder](#5-conditional-forwarder)
-6. [Trust einrichten](#6-trust-einrichten)
-7. [Trust validieren und testen](#7-trust-validieren-und-testen)
-8. [Sicherheitsüberlegungen](#8-sicherheitsüberlegungen)
-9. [Fazit](#9-fazit)
+- [Dokumentation – AWS Managed Microsoft AD \& AD-Trust](#dokumentation--aws-managed-microsoft-ad--ad-trust)
+  - [Inhaltsverzeichnis](#inhaltsverzeichnis)
+  - [1. Einleitung](#1-einleitung)
+  - [2. Umgebung](#2-umgebung)
+  - [3. AWS Managed AD erstellen](#3-aws-managed-ad-erstellen)
+  - [4. Ports und Sicherheitsgruppen](#4-ports-und-sicherheitsgruppen)
+  - [5. Conditional Forwarder](#5-conditional-forwarder)
+  - [6. Trust einrichten](#6-trust-einrichten)
+    - [6.1 Seite EC2-AD](#61-seite-ec2-ad)
+    - [6.2 Seite AWS Managed AD](#62-seite-aws-managed-ad)
+    - [6.3 Richtung des Trusts](#63-richtung-des-trusts)
+  - [7. Trust validieren und testen](#7-trust-validieren-und-testen)
+    - [7.1 Validierung](#71-validierung)
+    - [7.2 Funktionstest](#72-funktionstest)
+  - [8. Sicherheitsüberlegungen](#8-sicherheitsüberlegungen)
+  - [9. Fazit](#9-fazit)
 
 ---
 
@@ -131,7 +138,7 @@ Test:
 nslookup -type=SOA aws.firma.local
 ```
 
-[Screenshot: Ausgabe mit dem SOA-Eintrag von `aws.firma.local`]
+![Test](Bilder/Image555555555.png)
 
 ## 6. Trust einrichten
 
@@ -168,10 +175,7 @@ In der AWS-Konsole unter *Directory Service → Directory auswählen → Network
 | 4 | Richtung: [Two-way] |
 | 5 | Conditional-Forwarder-IP: `10.0.129.10` (EC2-DC) |
 
-[Screenshot: Schritt 1–2]
-[Screenshot: Schritt 3–4]
-[Screenshot: Schritt 5, Conditional Forwarder]
-[Screenshot: Trust mit Status *Verified*]
+
 
 ### 6.3 Richtung des Trusts
 
@@ -191,10 +195,10 @@ Ein angelegter Trust beweist nur, dass er erstellt wurde. Ob er trägt, zeigt ei
 
 | Nr. | Test | Erwartung | Nachweis |
 |---|---|---|---|
-| 1 | Im Dialog «Benutzer, Computer oder Gruppen auswählen» auf dem EC2-DC nach einem Benutzer aus `aws.firma.local` suchen | Benutzer der Gegenseite wird gefunden | [Screenshot] |
-| 2 | Ordner auf dem EC2-DC freigeben, Benutzer aus `aws.firma.local` berechtigen | Berechtigung kann gesetzt werden | [Screenshot] |
-| 3 | Zugriff auf die Freigabe mit diesem Benutzer | Zugriff funktioniert | [Screenshot] |
-| 4 | Zugriff mit einem Benutzer der Gegenseite, der **nicht** berechtigt wurde | Zugriff verweigert | [Screenshot] |
+| 1 | Im Dialog «Benutzer, Computer oder Gruppen auswählen» auf dem EC2-DC nach einem Benutzer aus `aws.firma.local` suchen | Benutzer der Gegenseite wird gefunden |  |
+| 2 | Ordner auf dem EC2-DC freigeben, Benutzer aus `aws.firma.local` berechtigen | Berechtigung kann gesetzt werden | |
+| 3 | Zugriff auf die Freigabe mit diesem Benutzer | Zugriff funktioniert |  |
+| 4 | Zugriff mit einem Benutzer der Gegenseite, der **nicht** berechtigt wurde | Zugriff verweigert | |
 
 Test 4 zeigt den Unterschied zwischen Authentifizierung und Autorisierung: Der Trust erkennt den Benutzer, aber ohne Berechtigung darf er nichts.
 
