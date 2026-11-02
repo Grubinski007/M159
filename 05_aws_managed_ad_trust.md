@@ -158,10 +158,7 @@ In *Active Directory-Domänen und -Vertrauensstellungen* (`domain.msc`) → Eige
 | 6 | Trust-Passwort eingegeben |
 | 7 | Bestätigung der ausgehenden/eingehenden Vertrauensstellung: [Nein, später] |
 
-[Screenshot: Schritt 1–2]
-[Screenshot: Schritt 3–4]
-[Screenshot: Schritt 5–6]
-[Screenshot: Schritt 7, Zusammenfassung]
+
 
 ### 6.2 Seite AWS Managed AD
 
@@ -175,7 +172,7 @@ In der AWS-Konsole unter *Directory Service → Directory auswählen → Network
 | 4 | Richtung: [Two-way] |
 | 5 | Conditional-Forwarder-IP: `10.0.129.10` (EC2-DC) |
 
-
+![AWS AD](Bilder/ImageVerzeichnis.png)
 
 ### 6.3 Richtung des Trusts
 
@@ -187,7 +184,7 @@ Bei einem zweiseitigen Trust vertrauen sich beide Domänen gegenseitig. Benutzer
 
 Nachdem beide Seiten eingerichtet sind, wurde der Trust auf dem EC2-AD geprüft: *Eigenschaften der Domäne → Vertrauensstellungen → Eigenschaften des Trusts → Überprüfen*.
 
-[Screenshot: Meldung, dass die Vertrauensstellung aktiv ist]
+![aktiv](Bilder/ImaageVerzeichnis2.png)
 
 ### 7.2 Funktionstest
 
