@@ -114,6 +114,8 @@ Kontrolle der erstellten Struktur:
 ```powershell
 Get-ADOrganizationalUnit -Filter * | Select-Object Name, DistinguishedName | Sort-Object DistinguishedName
 ```
+![AD](Bilder/imageExternintern.png)
+
 
 ## 4. Benutzer in die passenden OUs verschieben
 
@@ -148,6 +150,8 @@ GPO_<Geltungsbereich>_<Funktion>
 ```
 
 Beispiel: `GPO_IT_Netzlaufwerk-Abteilung` = GPO, gültig für die OU `IT`, mit der Funktion "Netzlaufwerk-Abteilung".
+
+![GPO](Bilder/image1000000.png)
 
 ### 5.1 Teil 1 – Passwortrichtlinien in der Default Domain Policy
 
@@ -191,6 +195,8 @@ Konfiguration jeweils unter *Benutzerkonfiguration → Einstellungen → Windows
 | `Intern` (Sicherheitsgruppe, enthält alle internen Benutzer) | Lesen + Gruppenrichtlinie übernehmen |
 
 Getestet wurde die Verteilung mit `gpresult /r` auf je einem internen und einem externen Testclient: Beim internen Client erschien die Verknüpfung nach `gpupdate /force` und Neuanmeldung auf dem Desktop, beim externen Client nicht.
+
+![Netzlaufwerk Verbunden](Bilder/ImageNetzlaufwerk.png)
 
 ### 5.4 Teil 4 – GPO mit WMI-Filter
 
