@@ -43,6 +43,8 @@ anonyme LDAP-Binds in Active Directory standardmässig restriktiv konfiguriert s
 CN=Petra Notter,OU=Benutzer,OU=Promoter,OU=Extern,DC=firma,DC=local
 ```
 
+![Bind](Bilder/ImageBind.png)
+
 ## Teil 2 – Drei Suchen zum Aufwärmen
 
 ### 2.1 Ein bestimmter Promoter über seinen Anmeldenamen
@@ -54,6 +56,8 @@ CN=Petra Notter,OU=Benutzer,OU=Promoter,OU=Extern,DC=firma,DC=local
 
 Beide Wege liefern dasselbe Objekt, da `Get-ADUser -LDAPFilter` intern exakt dieselbe LDAP-Suche
 an den DC schickt wie `ldp.exe`.
+
+![Ldap Search](Bilder/ImageLDAPSearch.png)
 
 ### 2.2 Alle Benutzer der Abteilung Finanzen (Buchhaltung)
 
@@ -83,6 +87,8 @@ CN=extern,OU=Gruppen,DC=firma,DC=local
 ```
 
 ## Teil 3 – Der Filter für die Firewall
+
+![](Bilder/ImageGezielterFilter.png)
 
 ### 3.1 Alle direkten Mitglieder der Gruppe `Promoter`
 
