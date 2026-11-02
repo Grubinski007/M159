@@ -82,6 +82,8 @@ Nach der Installation stehen folgende Konsolen zur Verfügung:
 
 Auf die gleiche Weise werden DNS-Einträge über `dnsmgmt.msc` und Gruppenrichtlinien über `gpmc.msc` verwaltet – auch hier erfolgt die Verbindung zur verwalteten Domäne über die jeweilige "Verbinden zu"-Funktion der Konsole.
 
+![AD](Bilder/Image999999999999.png)
+
 ## 4. Admin Center Server in die AWS Managed Domäne aufnehmen
 
 Damit die Admin-Center-Instanz Mitglied der Domäne werden kann, wurde zunächst der primäre und sekundäre DNS-Server der Netzwerkkarte auf die IP-Adressen der beiden AWS-Managed-AD-Domain-Controller angepasst (diese stellt AWS beim Erstellen des Managed AD zur Verfügung, z. B. `10.0.1.10` und `10.0.2.10`). Anschliessend wurde die Instanz über **System → Erweiterte Systemeinstellungen → Computername ändern** der Domäne beigetreten und neu gestartet.
@@ -161,13 +163,13 @@ Die eigentliche Einschränkung auf die zulässige Quell-IP erfolgt über die AWS
 
 Die WinRM-Verbindung vom Admin-Center-Server zum Domain Controller wurde erfolgreich getestet:
 
-![winrm](resources/winrm-check.png)
+
 
 Anschliessend wurde der Domain Controller im Admin Center über **Alle Verbindungen → Hinzufügen → Servermanager** mit dem vollqualifizierten Domänennamen (FQDN) sowie Domänen-Administrator-Anmeldedaten hinzugefügt:
 
-![add-dc-admin-center](resources/add-dc-admin-center.png)
 
-![Installation](<Bilder/Screenshot 2026-10-27 090645.png>)
+![Admin Center](Bilder/image8888888.png)
+![](Bilder/Image7777777.png)
 
 ## 6. Externer Zugriff auf das Admin Center (HTTPS/RDP)
 
